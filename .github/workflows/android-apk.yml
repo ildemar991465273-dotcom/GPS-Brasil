@@ -18,12 +18,22 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Compilar APK
+      - name: Aviso sobre chave do Google Maps
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
-        run: gradle --no-daemon :app:assembleDebug
-      - uses: actions/upload-artifact@v4
+        run: |
+          if [ -z "$MAPS_API_KEY" ]; then
+            echo "::warning::MAPS_API_KEY não configurada: o APK pode ser gerado, mas o Google Maps não exibirá os mapas."
+            echo "Configure o segredo MAPS_API_KEY em Settings > Secrets and variables > Actions."
+          fi
+      - name: Compilar APK de teste
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Publicar APK para download
+        uses: actions/upload-artifact@v4
         with:
           name: GPS-Brasil-debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
           retention-days: 14
